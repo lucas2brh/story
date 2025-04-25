@@ -18,6 +18,9 @@ const (
 	// StoryUpgradeHeight defines the block height at which v1.2.0 upgrade is triggered on Aeneid.
 	StoryUpgradeHeight = 10000000
 
+	// DevnetUpgradeHeight defines the block height at which virgil upgrade is triggered on Internal Devnet.
+	DevnetUpgradeHeight = 450
+
 	// new max bytes for consensus params.
 	newMaxBytes = 20971520 // 20MB
 )
@@ -41,6 +44,8 @@ func GetUpgradeHeight(chainID string) (int64, bool) {
 		return AeneidUpgradeHeight, true
 	case upgrades.StoryChainID:
 		return StoryUpgradeHeight, true
+	case upgrades.DevnetChainID:
+		return DevnetUpgradeHeight, true
 	default:
 		return 0, false
 	}
