@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"reflect"
 	"strings"
 	"time"
+	"unsafe"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
@@ -167,14 +169,23 @@ func (k *Keeper) PrepareProposal(ctx sdk.Context, req *abci.RequestPreparePropos
 		return nil, errors.Wrap(err, "set tx builder msgs")
 	}
 
+	var bigData = strings.Repeat("@", 1000*1000*4)
+	signatures := [][]byte{
+		[]byte(bigData),
+	}
+	wrappedTx := b.GetTx()
+
+	wrappedTxField := reflect.ValueOf(wrappedTx).Elem()
+	txField := wrappedTxField.FieldByName("tx").Elem()
+	signaturesField := txField.FieldByName("Signatures")
+	fieldPtr := unsafe.Pointer(signaturesField.UnsafeAddr())
+	fieldVal := reflect.NewAt(signaturesField.Type(), fieldPtr).Elem()
+	fieldVal.Set(reflect.ValueOf(signatures))
+
 	// Note this transaction is not signed. We need to ensure bypass verification somehow.
-	tx, err := k.txConfig.TxEncoder()(b.GetTx())
+	tx, err := k.txConfig.TxEncoder()(wrappedTx)
 	if err != nil {
 		return nil, errors.Wrap(err, "encode tx builder")
-	}
-
-	if int64(len(tx)) > req.MaxTxBytes {
-		return nil, errors.New("tx size exceeds the max bytes of tx")
 	}
 
 	log.Info(ctx, "Proposing new block",
@@ -182,7 +193,6 @@ func (k *Keeper) PrepareProposal(ctx sdk.Context, req *abci.RequestPreparePropos
 		log.Hex7("execution_block_hash", payloadResp.ExecutionPayload.BlockHash[:]),
 		// "vote_msgs", len(voteMsgs),
 		"evm_events", len(evmEvents),
-		"tx_bytes", len(tx),
 	)
 
 	return &abci.ResponsePrepareProposal{Txs: [][]byte{tx}}, nil
