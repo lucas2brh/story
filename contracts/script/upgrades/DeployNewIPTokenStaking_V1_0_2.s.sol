@@ -27,7 +27,7 @@ contract DeployNewIPTokenStaking_V1_0_1 is Script {
             abi.encode(1 ether, 256) // Constructor args: defaultMinFee (1 IP), maxDataLength
         );
 
-        bytes32 salt = keccak256(abi.encodePacked("IPTokenStaking_Implementation_v1_0_1"));
+        bytes32 salt = keccak256(abi.encodePacked("IPTokenStaking_Implementation_v1_0_2"));
 
         // Deploy using Create3
         address newImplementation = create3.deploy(salt, creationCode);
