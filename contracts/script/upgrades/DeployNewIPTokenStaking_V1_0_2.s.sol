@@ -13,7 +13,7 @@ import { Create3 } from "../../src/deploy/Create3.sol";
  * @notice Deploys a new implementation of IPTokenStaking contract to be used for upgrading
  * @dev This script only deploys the implementation contract, it does not perform the upgrade
  */
-contract DeployNewIPTokenStaking_V1_0_1 is Script {
+contract DeployNewIPTokenStaking_V1_0_2 is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
@@ -27,7 +27,7 @@ contract DeployNewIPTokenStaking_V1_0_1 is Script {
             abi.encode(1 ether, 256) // Constructor args: defaultMinFee (1 IP), maxDataLength
         );
 
-        bytes32 salt = keccak256(abi.encodePacked("IPTokenStaking_Implementation_v1_0_2"));
+        bytes32 salt = keccak256(abi.encodePacked("IPTokenStaking_Implementation_v1_0_21"));
 
         // Deploy using Create3
         address newImplementation = create3.deploy(salt, creationCode);

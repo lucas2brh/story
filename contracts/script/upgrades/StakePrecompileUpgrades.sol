@@ -13,7 +13,7 @@ import { TimelockController } from "@openzeppelin/contracts/governance/TimelockC
 
 contract PrecompileUpgrades is Script {
     TimelockController internal timelock;
-    address public newImpl = address(0xB8ba785A5FC96afE8d90Bc87d2f20Ad738E970c2); // replace
+    address public newImpl = address(0xD91113D0D8F26d85e264a9e3405a787A1aBD1e7a); // replace
     bytes32 public salt = keccak256(abi.encodePacked("StakingUpgrade-v1.0.2"));
 
     function run() public {
