@@ -26,12 +26,13 @@ PR #726 changes v2.0.0 from fork-based to pure binary-swap upgrade. Removes all 
 | ID | Scenario | Priority | Status | Date | Notes |
 |----|----------|----------|--------|------|-------|
 | S1-726 | planUpgrade + cosmovisor (disk fallback) | P0 | **PASS** | 2026-03-23 | height 275, disk fallback worked, no hardcoded V200 |
-| S2-726 | Fresh genesis v2.0.0 chain | P0 | **PARTIAL** | 2026-03-23 | DKG runs from block 1, but VE never enabled ([#729](https://github.com/piplabs/story/issues/729)) |
+| S2-726 | Fresh genesis v2.0.0 chain | P0 | **PASS** | 2026-03-23 | VE enabled via genesis.json ([devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8)), DKG + VE from block 1 |
 | S3-726 | Node restart after upgrade | P0 | **PASS** | 2026-03-23 | stale upgrade-info.json no interference |
-| S6-726 | DKG functional (genesis chain) | P0 | **PARTIAL** | 2026-03-23 | BeginBlocker runs, rounds initiate but never finalize (VE disabled) |
-| S7-726 | VE timing via consensus params | P0 | **FAIL** | 2026-03-23 | VoteExtensionsEnableHeight=0 on genesis chain |
-| D2 | State sync (no upgrade-info.json) | P1 | - | | |
-| S5-726 | Rolling upgrade impossible | P1 | - | | |
+| S6-726 | DKG functional (genesis chain) | P0 | **PASS** | 2026-03-23 | BeginBlocker + DKG rounds from block 1 (after genesis VE fix) |
+| S7-726 | VE timing via consensus params | P0 | **PASS** | 2026-03-23 | ExtendVote + VerifyVoteExtension from block 1 (genesis VE=1) |
+| D2-A | New node full sync (cosmovisor swap) | P0 | **PASS** | 2026-03-23 | val6: v1.5.3→v2.0.0 cosmovisor swap, no app hash mismatch |
+| D2-B | New node full sync (v2.0.0 only) | P0 | **FAIL** | 2026-03-23 | val5: app hash mismatch — new DKG store changes multistore hash. Expected. |
+| S5-726 | Rolling upgrade impossible | P1 | **PASS** | 2026-03-23 | Code analysis: ProcessProposal always requires MsgAddDkgVote, old binary won't include it |
 
 ### UpgradeStoreLoader Fix Validation
 

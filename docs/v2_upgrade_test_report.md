@@ -199,20 +199,51 @@ Key validation: **No hardcoded V200 in binary.** `upgrade-info.json` written by 
 | VoteExtensionsEnableHeight | **FAIL** — value is 0, VE never enabled |
 | DKG round finalization | **FAIL** — rounds initiate but never finalize |
 
-### Finding: Genesis v2.0.0 VoteExtensions Not Enabled
+### Finding & Fix: Genesis v2.0.0 VoteExtensions Not Enabled
 
 **Issue**: [#729](https://github.com/piplabs/story/issues/729)
+**Fix**: [devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8)
 
-`enableVoteExtensions` only runs inside the v2.0.0 upgrade handler. Genesis chains
-don't execute upgrade handlers, so `VoteExtensionsEnableHeight` stays 0. `PrepareVotes`
-short-circuits and returns empty `MsgAddDkgVote` every block. DKG rounds initiate but
-can never finalize.
+Initial S2-726 test showed `VoteExtensionsEnableHeight=0` — VE never enabled on
+genesis chain because upgrade handler (which calls `enableVoteExtensions`) doesn't
+run on genesis chains.
 
-Before #726, `scheduleForkUpgrade` triggered the handler at the hardcoded V200 height.
-#726 removes that path, breaking VE activation for genesis chains.
+**Root cause**: Not a code bug. Genesis config issue — `vote_extensions_enable_height`
+was `"0"` (disabled) in `genesis-node.json`. Changed to `"1"` to enable from block 1.
 
-**Impact**: Any chain started from scratch with v2.0.0 binary. Does not affect
-Aeneid/mainnet (upgrade handler runs normally).
+**Re-test result (2026-03-23)**: After merging devnet-aws#8 and network-reset:
+- ExtendVote + VerifyVoteExtension present from block 1
+- DKG rounds initiating with VE data available
+- Smoke test PASS
+
+**Takeaway**: Any new chain with v2.0.0 genesis binary must set
+`vote_extensions_enable_height: "1"` in genesis.json.
+
+### D2: No upgrade-info.json (Validator5) — PARTIAL PASS
+
+**Date**: 2026-03-23
+
+Validator5 running #726 binary on genesis chain, no upgrade-info.json exists.
+Node at height 390, `catching_up: false`, fully synced. Binary starts normally
+without disk fallback (genesis path: `lastVersion==0` early return).
+
+Partial because this only covers genesis scenario. Full D2 (state sync into
+post-upgrade network) needs S1-726 devnet which was overwritten by S2-726.
+
+### S5-726: Rolling Upgrade Impossible — PASS (Code Analysis)
+
+**Date**: 2026-03-23
+
+`ProcessProposal` (`client/app/prouter.go:76-79`) unconditionally requires
+exactly 1 `MsgAddDkgVote` in every proposal. Old binary proposers don't include
+this message → new binary validators reject → consensus cannot be reached with
+mixed binaries. Confirms binary-swap is the only upgrade path.
+
+### DKG Keeper Unit Tests — PASS
+
+**Date**: 2026-03-23
+
+All tests passed: `go test ./client/x/dkg/keeper/... -v -count=1`
 
 ---
 

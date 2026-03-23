@@ -7,7 +7,7 @@ set -euo pipefail
 
 RPC="https://devnet0.storyrpc.io"
 
-PROPOSER_KEY="0x45813784c38bb79693e587efc8b754ca12e04552358855cc02f069da9c11b79c"
+PROPOSER_KEY="${DEVNET_PROPOSER_KEY:?Set DEVNET_PROPOSER_KEY env var}"
 EXECUTOR_ADDR="0x28756A43b51ca11031f32b9a3616930471aC40eb"
 
 echo "=== Devnet Smoke Test ==="
