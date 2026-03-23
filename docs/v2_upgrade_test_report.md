@@ -136,6 +136,75 @@ Expected 379131F9..., got 7ED8F001...
 | Genesis VE config required | DKG non-functional on genesis v2.0.0 chains | [devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8) |
 | Single-binary full sync impossible | New nodes need cosmovisor + multi-binary | Expected (new KVStore) |
 | install.sh chown missing | cosmovisor permission denied | [devnet-aws#7](https://github.com/storyprotocol/story-devnet-aws/pull/7) |
+| evmengine re-plan of completed name | Minor — `SetPendingUpgrade` skips done check, SDK blocks at apply | No fix needed |
+
+## planUpgrade Edge Case Tests (2026-03-23)
+
+| ID | Test | Result |
+|----|------|--------|
+| E4 | Double plan (same name, pending) | **PASS** — rejected `pending_upgrade_exists` |
+| E4b | Cancel → re-plan | **PASS** — cancel clears pending, re-plan succeeds |
+| E4c | Plan already completed name | **FINDING** — evmengine accepts, creates pending; SDK would block at execution |
+| E5 | Plan at past height | **PASS** — rejected on-chain |
+
+## D2-ss: State Sync with v2.0.0 Only — PASS
+
+**Date**: 2026-03-23
+**Node**: validator5 (v2.0.0 as genesis binary, state sync from rpc1)
+**Trust height**: 3000
+
+| Check | Result |
+|-------|--------|
+| State sync completed | PASS (height 3165+) |
+| upgrade-info.json | Not found (expected) |
+| Single v2.0.0 binary | faa1e37 (#726) |
+| No cosmovisor switch | current → genesis |
+| catching_up | false |
+| No app hash mismatch | PASS |
+
+**State sync evidence** (logs from validator5 startup):
+
+```
+07:57:26  ABCI call: OfferSnapshot              — CometBFT found snapshot from peers
+07:57:27  ABCI call: ApplySnapshotChunk         — applying snapshot data
+07:57:27  restoring snapshot  store=acc
+07:57:27  restoring snapshot  store=bank
+07:57:27  restoring snapshot  store=consensus
+07:57:27  restoring snapshot  store=distribution
+07:57:27  restoring snapshot  store=dkg          ← DKG store restored from snapshot
+07:57:27  restoring snapshot  store=evidence
+07:57:27  restoring snapshot  store=evmengine
+07:57:27  restoring snapshot  store=evmstaking
+07:57:27  restoring snapshot  store=gov
+07:57:27  restoring snapshot  store=mint
+07:57:27  restoring snapshot  store=slashing
+07:57:27  restoring snapshot  store=staking
+07:57:27  restoring snapshot  store=upgrade
+```
+
+DKG store is included in the snapshot and restored directly — no upgrade handler, no
+upgrade-info.json, no cosmovisor binary switch needed.
+
+Confirms: **post-upgrade nodes can join via CL state sync using only v2.0.0 binary.**
+
+Note: This tests CometBFT state sync (CL layer).
+
+## D2-snap: EL Snap Sync Post-Upgrade — PASS
+
+**Date**: 2026-03-23
+**Node**: validator5 (geth SyncMode changed from "full" to "snap")
+
+| Check | Result |
+|-------|--------|
+| Geth snap sync enabled | `Enabled snap sync  head=0 hash=8f1c33..edb7a2` |
+| Snap sync completed | `Snap sync complete, auto disabling` synced=100.00% |
+| eth_syncing | false |
+| eth_blockNumber | 0xd8f (3471) |
+| Imported chain segments | Continuous, no errors |
+
+EL snap sync works independently of CL upgrade. Geth downloads EVM state trie
+from peers without replaying historical blocks. DKG module (CL only) does not
+affect geth state.
 
 ## Artifacts
 

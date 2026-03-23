@@ -38,12 +38,15 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 
 | ID | Scenario | Priority | Status | Notes |
 |----|----------|----------|--------|-------|
-| D2-ss | State sync join post-upgrade | P1 | - | Verify snapshot contains DKG store |
+| D2-ss | CL state sync with v2.0.0 only | **P0** | **PASS** | 2026-03-23 | val5: CometBFT state sync at height 3000, single v2.0.0 binary |
+| D2-snap | EL snap sync post-upgrade | P1 | **PASS** | 2026-03-23 | val5: geth snap sync complete at block 3471, auto disabled |
 | E1 | Validator delayed restart (1/4 late 5min) | P1 | - | 3/4 continues, late node catches up |
 | E2 | Crash during upgrade handler | P1 | - | Kill validator mid-upgrade, verify idempotent recovery |
 | E3 | Rollback to pre-upgrade height | P1 | - | `story rollback` + re-upgrade |
-| E4 | Double planUpgrade (same height) | P2 | - | Duplicate submission, verify no panic |
-| E5 | planUpgrade at past height | P2 | - | Verify rejection |
+| E4 | Double planUpgrade (same name, pending) | P2 | **PASS** | 2026-03-23 | Second plan rejected: `pending_upgrade_exists` |
+| E4b | planUpgrade after cancel | P2 | **PASS** | 2026-03-23 | cancel → re-plan succeeds |
+| E4c | planUpgrade already completed name | P2 | **FINDING** | 2026-03-23 | evmengine allows re-plan of completed name (minor, SDK blocks execution) |
+| E5 | planUpgrade at past height | P2 | **PASS** | 2026-03-23 | Rejected on-chain |
 | E6 | UBI distribution pre/post upgrade | P2 | - | DKG settlement + reward behavior change |
 | E7 | Staking operations across upgrade | P2 | - | delegate/undelegate/redelegate unaffected |
 | E8 | Sequential upgrades (v2.0.0 → v3.0.0) | P2 | - | Multi-upgrade disk fallback |
@@ -54,7 +57,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | ID | Scenario | Covered By | Status |
 |----|----------|------------|--------|
 | D1 | upgrade-info.json happy path | S1-726 | **PASS** |
-| D2 | No upgrade-info.json (state sync) | - | pending |
+| D2 | No upgrade-info.json (state sync) | D2-ss | **PASS** |
 | D3 | Stale upgrade-info.json (restart) | S3-726 | **PASS** |
 
 ### Standard Post-Test Sanity Check
@@ -72,6 +75,7 @@ Every test must end with `scripts/devnet-smoke-test.sh`:
 | install.sh missing chown | [devnet-aws#7](https://github.com/storyprotocol/story-devnet-aws/pull/7) | chown -R ubuntu:ubuntu |
 | Genesis v2.0.0 needs VE=1 in genesis.json | [#729](https://github.com/piplabs/story/issues/729) (closed) | [devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8) |
 | v2.0.0 cannot single-binary full sync | Expected behavior | New DKG KVStore changes multistore hash; must use cosmovisor |
+| evmengine allows re-plan of completed upgrade name | Minor | `SetPendingUpgrade` doesn't check `GetDoneHeight`; SDK blocks execution at apply time |
 
 ### TEE Limitation
 
