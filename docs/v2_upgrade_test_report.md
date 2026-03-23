@@ -146,6 +146,22 @@ Expected 379131F9..., got 7ED8F001...
 | E4b | Cancel → re-plan | **PASS** — cancel clears pending, re-plan succeeds |
 | E4c | Plan already completed name | **FINDING** — evmengine accepts, creates pending; SDK would block at execution |
 | E5 | Plan at past height | **PASS** — rejected on-chain |
+| E2 | Crash during upgrade | **PASS** — cosmovisor recovered from crash-loop, handler too fast to kill mid-exec |
+| E3 | Rollback + recovery | **PASS** — `story rollback` to 4640, restarted, caught up to 4684, no mismatch |
+
+## E1: Validator Delayed Restart — PASS
+
+**Date**: 2026-03-23
+**Node**: validator4 (stopped for 2 min)
+
+| Step | Result |
+|------|--------|
+| Pre-stop height | 3599 |
+| Stop validator4 | OK |
+| Chain continues (3/4 = 75%) | 3610→3613, producing |
+| Validator4 down 2 min | Chain at 3649 |
+| Restart validator4 | active, catching_up=false at 4216 |
+| Smoke test | PASS |
 
 ## D2-ss: State Sync with v2.0.0 Only — PASS
 
