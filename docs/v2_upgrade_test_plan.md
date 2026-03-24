@@ -46,6 +46,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | E4 | Double planUpgrade (same name, pending) | P2 | **PASS** | 2026-03-23 | Second plan rejected: `pending_upgrade_exists` |
 | E4b | planUpgrade after cancel | P2 | **PASS** | 2026-03-23 | cancel → re-plan succeeds |
 | E4c | planUpgrade already completed name | P2 | **FINDING** | 2026-03-23 | evmengine allows re-plan of completed name (minor, SDK blocks execution) |
+| E4d | cancelUpgrade leaves stale upgrade-info.json | P1 | **FINDING** | 2026-03-24 | `cancelUpgrade` clears on-chain state but NOT disk file; causes cosmovisor to look for wrong binary on restart/rollback |
 | E5 | planUpgrade at past height | P2 | **PASS** | 2026-03-23 | Rejected on-chain |
 | F1 | Pending unbonding across upgrade | P0 | - | delegate→undelegate before upgrade, verify mature after |
 | F2 | In-flight tx at upgrade height | P0 | - | tx-load during upgrade, verify no loss, nonce continuity |
@@ -94,6 +95,7 @@ Run `scripts/devnet-tx-load.sh` in background during upgrade tests to simulate r
 | Genesis v2.0.0 needs VE=1 in genesis.json | [#729](https://github.com/piplabs/story/issues/729) (closed) | [devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8) |
 | v2.0.0 cannot single-binary full sync | Expected behavior | New DKG KVStore changes multistore hash; must use cosmovisor |
 | evmengine allows re-plan of completed upgrade name | Minor | `SetPendingUpgrade` doesn't check `GetDoneHeight`; SDK blocks execution at apply time |
+| cancelUpgrade leaves stale upgrade-info.json | **P1** | `DumpUpgradeInfoToDisk` writes at plan time, `cancelUpgrade` doesn't delete it; causes cosmovisor to look for wrong binary on restart/rollback |
 
 ### TEE Limitation
 

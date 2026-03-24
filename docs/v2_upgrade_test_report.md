@@ -147,7 +147,20 @@ Expected 379131F9..., got 7ED8F001...
 | E4c | Plan already completed name | **FINDING** — evmengine accepts, creates pending; SDK would block at execution |
 | E5 | Plan at past height | **PASS** — rejected on-chain |
 | E2 | Crash during upgrade | **PASS** — cosmovisor recovered from crash-loop, handler too fast to kill mid-exec |
-| E3 | Rollback + recovery | **PASS** — `story rollback` to 4640, restarted, caught up to 4684, no mismatch |
+| E3 | Rollback + recovery | **retest needed** — initial test only rolled back 1 block; full rollback past upgrade height timed out |
+| E4d | cancelUpgrade stale file | **FINDING** — `cancelUpgrade` doesn't delete `upgrade-info.json` from disk |
+
+### Finding: cancelUpgrade Leaves Stale upgrade-info.json (E4d)
+
+**Date**: 2026-03-24
+
+`DumpUpgradeInfoToDisk` writes `upgrade-info.json` when `planUpgrade` is processed (not at halt). `cancelUpgrade` clears on-chain pending state via `ResetPendingUpgrade` but does NOT delete the disk file.
+
+**Reproduction**: E4b test planned v3.0.0 at height 77777 then cancelled. `upgrade-info.json` still contained `{"name":"v3.0.0","height":77777}`. When val4 was later rollback'd and cosmovisor restarted, it read the stale file and tried to find `upgrades/v3.0.0/bin/story` → crash loop.
+
+**Impact**: After any `cancelUpgrade`, operators must manually delete `upgrade-info.json` or cosmovisor will misbehave on restart.
+
+**Pre-check**: Before running rollback or restart tests, always verify `upgrade-info.json` contents match expected state.
 
 ## E1: Validator Delayed Restart — PASS
 
