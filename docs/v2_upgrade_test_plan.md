@@ -42,19 +42,19 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | D2-snap | EL snap sync post-upgrade | P1 | **PASS** | 2026-03-23 | val5: geth snap sync complete at block 3471, auto disabled |
 | E1 | Validator delayed restart (1/4 down 2min) | P1 | **PASS** | 2026-03-23 | 3/4 continued, val4 caught up after restart |
 | E2 | Crash during upgrade handler | P1 | **PASS** | 2026-03-23 | Cosmovisor recovered from crash-loop at upgrade height; handler too fast to kill mid-execution |
-| E3 | Rollback + recovery | P1 | **PASS** | 2026-03-23 | Rollback to 4640, restarted, caught up to 4684 |
+| E3 | Rollback + recovery | P1 | **PASS** | 2026-03-24 | Post-upgrade rollback 5 blocks (1921→1916), recovered to 1925 |
 | E4 | Double planUpgrade (same name, pending) | P2 | **PASS** | 2026-03-23 | Second plan rejected: `pending_upgrade_exists` |
 | E4b | planUpgrade after cancel | P2 | **PASS** | 2026-03-23 | cancel → re-plan succeeds |
 | E4c | planUpgrade already completed name | P2 | **FINDING** | 2026-03-23 | evmengine allows re-plan of completed name (minor, SDK blocks execution) |
 | E4d | cancelUpgrade leaves stale upgrade-info.json | P1 | **FINDING** | 2026-03-24 | `cancelUpgrade` clears on-chain state but NOT disk file; causes cosmovisor to look for wrong binary on restart/rollback |
 | E5 | planUpgrade at past height | P2 | **PASS** | 2026-03-23 | Rejected on-chain |
 | F1 | Pending unbonding across upgrade | P0 | - | delegate→undelegate before upgrade, verify mature after |
-| F2 | In-flight tx at upgrade height | P0 | - | tx-load during upgrade, verify no loss, nonce continuity |
-| F3 | Contract state survival | P1 | - | Deploy+write state pre-upgrade, read post-upgrade |
+| F2 | In-flight tx at upgrade height | P0 | **PASS** | 2026-03-24 | 200 tx (forge script) across upgrade, all on-chain successful |
+| F3 | Contract state survival | P1 | **PASS** | 2026-03-24 | ERC20 name/supply/balance intact post-upgrade |
 | F4 | EL-CL consistency post-upgrade | P1 | - | Contract deploy + complex call, Engine API works |
-| F5 | Block time regression | P1 | - | Compare avg block time pre/post (DKG+VE overhead) |
+| F5 | Block time regression | P1 | **PASS** | 2026-03-24 | 2.2s/block pre and post upgrade, no regression |
 | F6 | Long-running stability (1h+) | P1 | - | Monitor RSS, disk, block time post-upgrade |
-| F7 | Cross-version RPC (historical query) | P1 | - | eth_getBalance at pre-upgrade block number |
+| F7 | Cross-version RPC (historical query) | P1 | **PASS** | 2026-03-24 | Historical balance at pre-upgrade block matches |
 | F8 | Unequal voting power upgrade | P1 | - | 1 validator 10x stake, verify consensus |
 | E6 | UBI distribution pre/post upgrade | P2 | - | DKG settlement + reward behavior change |
 | E7 | Staking operations across upgrade | P2 | - | Subsumed by F1 for cross-upgrade case |
