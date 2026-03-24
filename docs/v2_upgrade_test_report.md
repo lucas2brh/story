@@ -147,6 +147,51 @@ Expected 379131F9..., got 7ED8F001...
 | E4c | Plan already completed name | **FINDING** — evmengine accepts, creates pending; SDK would block at execution |
 | E5 | Plan at past height | **PASS** — rejected on-chain |
 | E2 | Crash during upgrade | **PASS** — cosmovisor recovered from crash-loop, handler too fast to kill mid-exec |
+| F11 | New bin without planUpgrade | **FAIL** — DKG store mismatch crash |
+| F12 | Official binary on unknown chain ID | **CONFIRMED** — panic: unknown chain ID |
+
+## F11: New Binary Without planUpgrade — FAIL
+
+**Date**: 2026-03-24
+**Scenario**: All 7 nodes swapped from v1.5.3 to v2.0.0 without sending planUpgrade
+
+```
+ERRO !! Fatal error occurred, app died️ unexpectedly !!
+err="create app: load app: failed to load latest version:
+version of store dkg mismatch root store's version;
+expected 246 got 0; new stores should be added using StoreUpgrades"
+```
+
+v2.0.0 binary mounts DKG store at startup. Without planUpgrade there is no
+`upgrade-info.json` → disk fallback doesn't trigger → DKG store not in
+`StoreUpgrades.Added` → `DefaultStoreLoader` tries to load DKG at version 246 →
+no data on disk (version 0) → crash.
+
+**Conclusion**: v2.0.0 binary CANNOT be hot-swapped. Must go through
+planUpgrade → halt → cosmovisor switch.
+
+## F12: Official Binary on Unknown Chain ID — CONFIRMED
+
+**Date**: 2026-03-24
+**Binary**: Clean upstream build from `0382ec7` (no InternalDevnetID)
+**Node**: validator5
+
+```
+INFO Starting story consensus client
+INFO Version info  version=v1.5.3-stable git_commit=unknown
+panic: failed to get upgrade history: unknown chain ID
+```
+
+`GetUpgradeHistory("internal-devnet-1")` returns `ErrUnknownChainID` →
+`setupUpgradeStoreLoaders` panics. Binary crash-loops.
+
+**Impact**: Official release binary cannot run on any chain not listed in
+`UpgradeHistories`. Devnet must use locally compiled binary with
+InternalDevnetID added.
+
+**Recommendation**: Change `GetUpgradeHistory` to return empty `UpgradeMap`
+for unknown chain IDs instead of error. With #726's disk fallback, hardcoded
+upgrade history is no longer required for v2.0.0.
 | E3 | Rollback + recovery | **retest needed** — initial test only rolled back 1 block; full rollback past upgrade height timed out |
 | E4d | cancelUpgrade stale file | **FINDING** — `cancelUpgrade` doesn't delete `upgrade-info.json` from disk |
 
