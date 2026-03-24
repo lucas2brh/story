@@ -62,6 +62,8 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | E9 | cancelUpgrade before execution | P2 | - | Nodes don't halt after cancel |
 | F9 | Network partition during upgrade | P2 | - | 2/4 validators halt at different times |
 | F10 | Downgrade v2.0.0 → v1.5.3 | P2 | - | Emergency rollback to old binary |
+| F11 | New bin without planUpgrade | P1 | - | All validators swap to v2.0.0 without plan — can chain produce blocks? |
+| F12 | Official binary on unknown chain ID | P1 | **INCONCLUSIVE** | 2026-03-24 | Binary started but app hash mismatch (DKG store mounted); no panic observed; needs clean upstream build to confirm |
 
 ### Disk Fallback Validation
 
