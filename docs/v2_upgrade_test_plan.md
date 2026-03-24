@@ -132,6 +132,22 @@ planUpgrade("v2.0.0", H) on-chain
 - Genesis v2.0.0 chains: set `vote_extensions_enable_height: "1"` in genesis.json
 - After cancelUpgrade: manually delete `data/upgrade-info.json`
 
-## TEE Limitation
+## TEE Limitation & Mock Plan
 
-Devnet has no TEE (SGX). DKG functional tests (registration, dealing, finalization) cannot complete. Upgrade mechanism tests work normally.
+Devnet has no TEE (SGX). DKG functional tests (registration, dealing, finalization) cannot complete with real attestation.
+
+**Mock approach**: Deploy modified DKG.sol with `authenticateEnclaveReport()` returning true unconditionally. This allows:
+- Mock kernel server to register validators without real SGX enclave
+- DKG rounds to complete (dealing, response, finalization)
+- Non-zero settlement balance → validates `ProcessUbiWithdrawal` full path
+- Active committee → validates `DistributeRewardsToActiveCommittee` with real distribution
+
+**Steps**:
+1. Modify `contracts/src/protocol/DKG.sol` — bypass attestation check
+2. Deploy modified contract to devnet (via upgrade or redeploy)
+3. Run mock kernel gRPC server on each validator
+4. Verify DKG round completes → settlement balance > 0
+5. Verify UBI distribution includes DKG rewards (F1/E6)
+6. Coordinate with Hans for mock kernel implementation
+
+**Blocked on**: Mock kernel server + modified DKG contract deployment. Track with dev team.
