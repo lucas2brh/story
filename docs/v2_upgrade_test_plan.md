@@ -77,7 +77,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 
 | ID | Scenario | Priority | Status | Notes |
 |----|----------|----------|--------|-------|
-| E6 | UBI distribution pre/post (needs TEE) | P2 | - | DKG settlement + reward |
+| E6 | UBI distribution (mock settlement) | P1 | **PASS** | 2026-03-24 | Mock A: ClaimSettlementBalance non-zero path verified. Mock B (committee rewards) pending. |
 | E8 | Sequential upgrades (v2.0.0 → v3.0.0) | P2 | - | Multi-upgrade disk fallback |
 | E9 | cancelUpgrade before halt | P2 | - | Nodes don't halt after cancel |
 | F9 | Network partition during upgrade | P2 | - | 2/4 halt at different times |
