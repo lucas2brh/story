@@ -63,6 +63,12 @@ var UpgradeHistories = map[string]UpgradeMap{
 		V142:     11784600,
 		Horace:   13780500,
 	},
+	InternalDevnetID: {
+		V121:    0,
+		Terence: 0,
+		V142:    0,
+		Horace:  0,
+	},
 }
 
 func (um UpgradeMap) GetUpgradeBlock(upgradeName string) (int64, error) {

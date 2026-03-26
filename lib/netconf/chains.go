@@ -15,4 +15,7 @@ const (
 
 	// StoryLocalnetID is the chain ID of Story Localnet (https://github.com/piplabs/story-localnet).
 	StoryLocalnetID = "story-localnet"
+
+	// InternalDevnetID is the chain ID of Story internal devnet (devnet0).
+	InternalDevnetID = "internal-devnet-1"
 )

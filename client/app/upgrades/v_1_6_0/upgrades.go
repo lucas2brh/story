@@ -2,7 +2,10 @@ package v_1_6_0
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"cosmossdk.io/math"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -39,6 +42,48 @@ func CreateUpgradeHandler(
 		// had no genesis state in the static genesis.json.
 		if err := keepers.DKGKeeper.SetParams(ctx, dkgtypes.DefaultParams()); err != nil {
 			return newVM, errors.Wrap(err, "set DKG default params")
+		}
+
+		// Mock A: seed DKG settlement balance for devnet testing.
+		// TODO: remove before production release.
+		mockAmount := math.NewInt(10000)
+		mockCoins := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, mockAmount))
+		if err := keepers.BankKeeper.MintCoins(ctx, dkgtypes.ModuleName, mockCoins); err != nil {
+			log.Warn(ctx, "Mock: failed to mint settlement coins", err)
+		} else if err := keepers.DKGKeeper.SettlementBalance.Set(ctx, mockAmount.String()); err != nil {
+			log.Warn(ctx, "Mock: failed to set settlement balance", err)
+		} else {
+			log.Info(ctx, "Mock: seeded DKG settlement balance", "amount", mockAmount.String())
+		}
+
+		// Mock B: seed fake DKG active committee for devnet testing.
+		// TODO: remove before production release.
+		{
+			fakeRound := uint32(1)
+			fakeRoundKey := "1"
+			if err := keepers.DKGKeeper.DKGNetworks.Set(ctx, fakeRoundKey, dkgtypes.DKGNetwork{
+				Round: fakeRound, StartBlockHeight: plan.Height, Total: 3, Threshold: 2,
+			}); err != nil {
+				log.Warn(ctx, "Mock B: failed to set DKG network", err)
+			}
+			if err := keepers.DKGKeeper.LatestActiveRound.Set(ctx, fakeRoundKey); err != nil {
+				log.Warn(ctx, "Mock B: failed to set active round", err)
+			}
+			validators := []string{
+				"0xc5c0beeac8b37ed52f6a675ee2154d926a88e3ec",
+				"0xdb8e606ad7c02f37e43d10a10126791dc94b0434",
+				"0xcd5faabca5bea3c5fc5e2371c7b397604720c2c2",
+			}
+			for i, addr := range validators {
+				regKey := fmt.Sprintf("%d_%s", fakeRound, strings.ToLower(addr))
+				if err := keepers.DKGKeeper.DKGRegistrations.Set(ctx, regKey, dkgtypes.DKGRegistration{
+					Round: fakeRound, ValidatorAddr: strings.ToLower(addr),
+					Index: uint32(i), Status: dkgtypes.DKGRegStatusFinalized,
+				}); err != nil {
+					log.Warn(ctx, "Mock B: failed to set registration", err, "addr", addr)
+				}
+			}
+			log.Info(ctx, "Mock B: seeded fake DKG committee", "members", len(validators), "round", fakeRound)
 		}
 
 		// Enable vote extensions at this upgrade height. The DKG module

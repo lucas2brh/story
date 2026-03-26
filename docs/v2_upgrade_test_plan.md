@@ -44,7 +44,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | E2 | Crash during upgrade (cosmovisor recovery) | **PASS** | 2026-03-23 | Handler too fast to kill mid-exec |
 | E3 | Rollback past upgrade height | **PARTIAL** | 2026-03-24 | Post-upgrade 5-block rollback works; cross-boundary too slow (IAVL) |
 | E4d | cancelUpgrade leaves stale upgrade-info.json | **FINDING** | 2026-03-24 | Disk file not deleted on cancel |
-| E6 | UBI distribution (mock A+B) | **PASS** | 2026-03-26 | Re-verified on release/1.6 baseline. Mock A: settlement 10000. Mock B: 3 members per_member=1942541/block. |
+| E6 | UBI distribution (mock A+B) | **PASS** | 2026-03-24 | Mock A: ClaimSettlementBalance 10000. Mock B: 3 members per_member=3885125/block. |
 | F3 | Contract state survival (ERC20) | **PASS** | 2026-03-24 | name/supply/balance intact |
 | F4 | EL-CL consistency (deploy + complex calls) | **PASS** | 2026-03-24 | deploy + transfer + approve + transferFrom |
 | F5 | Block time regression | **PASS** | 2026-03-25 | GHA regression (795dc17) |
@@ -58,10 +58,10 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 
 | ID | Scenario | Status | Date | Notes |
 |----|----------|--------|------|-------|
-| E4 | Double planUpgrade (same name, pending) | **PASS** | 2026-03-26 | Re-verified on release/1.6: invalid_request |
-| E4b | planUpgrade after cancel | **PASS** | 2026-03-26 | Re-verified on release/1.6: cancel → re-plan v1.6.0@77777 |
-| E4c | planUpgrade already completed name | **FINDING** | 2026-03-26 | Re-verified on release/1.6: evmengine accepts v1.6.0@99999 |
-| E5 | planUpgrade at past height | **PASS** | 2026-03-26 | Re-verified on release/1.6: silent reject (no log) |
+| E4 | Double planUpgrade (same name, pending) | **PASS** | 2026-03-23 | Rejected: pending_upgrade_exists |
+| E4b | planUpgrade after cancel | **PASS** | 2026-03-23 | cancel → re-plan succeeds |
+| E4c | planUpgrade already completed name | **FINDING** | 2026-03-23 | evmengine allows, SDK blocks at execution |
+| E5 | planUpgrade at past height | **PASS** | 2026-03-23 | Rejected on-chain |
 | E8 | Sequential upgrades (v1.6.0 → v2.0.0) | - | | Multi-upgrade disk fallback |
 | E9 | cancelUpgrade before halt | - | | Nodes don't halt after cancel |
 | F9 | Network partition during upgrade | - | | 2/4 halt at different times |
@@ -77,7 +77,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 |---------|--------|-----|
 | UpgradeStoreLoader mountedStores bug | Blocks new stores at upgrade height | [#724](https://github.com/piplabs/story/pull/724) |
 | Genesis v1.6.0 needs VE=1 | DKG non-functional without it | [devnet-aws#8](https://github.com/storyprotocol/story-devnet-aws/pull/8) |
-| cancelUpgrade leaves stale upgrade-info.json | Cosmovisor looks for wrong binary on restart | [#757](https://github.com/piplabs/story/issues/757) |
+| cancelUpgrade leaves stale upgrade-info.json | Cosmovisor looks for wrong binary on restart | Manual cleanup required |
 | evmengine re-plan of completed name | Dirty pending state | Minor, SDK blocks execution |
 | Unknown chain ID panics | Official binary unusable on custom chains | Propose: return empty map |
 | v1.6.0 cannot single-binary full sync | New nodes need cosmovisor or state sync | Expected (new KVStore) |
