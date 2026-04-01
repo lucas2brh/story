@@ -4,12 +4,12 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 
 ## Test Environment
 
-- **Baseline**: piplabs/story `release/1.6` @ 8307f9c
-- **Test binary**: lucas2brh/story `release/1.6-test` @ 8307f9c (baseline + InternalDevnetID)
-- **Mock branch**: lucas2brh/story `test/mock-dkg-settlement` @ 98dee1c
-- **Regression GHA**: storyprotocol/story-devnet-aws `Regression Test` workflow
-- **Manual Tests GHA**: storyprotocol/story-devnet-aws `Manual Tests` workflow (PR #14)
-- **Last updated**: 2026-03-26
+- **Baseline**: piplabs/story `v1.6.1` @ 4af80eb (release tag)
+- **Previous baseline**: piplabs/story `release/1.6` @ 8307f9c
+- **Test binary**: story-v161-devnet (v1.6.1 + InternalDevnetID)
+- **Mock branch**: lucas2brh/story `test/mock-e6-release16` @ c2ae981
+- **Regression GHA**: storyprotocol/story-devnet-aws `Regression Test` workflow (PR #17)
+- **Last updated**: 2026-03-30
 
 ## Execution Status
 
@@ -30,7 +30,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | D2-A | Full sync with cosmovisor binary swap | **PASS** | 2026-03-26 | 8307f9c | Regression GHA: validator6 wipe + cosmovisor full sync |
 | D2-B | Full sync with v1.6.0 only | **SKIP** | 2026-03-26 | - | Devnet Horace=0, DKG store from genesis. Only valid on Aeneid/mainnet |
 | D2-ss | CL state sync with v1.6.0 only | **PASS** | 2026-03-26 | 8307f9c | Manual GHA: DKG store in snapshot, no upgrade-info.json |
-| F1 | Pending unbonding across upgrade | **PASS** | 2026-03-26 | 8307f9c | P0 Reset GHA: unbonding_time=600s, stake+unstake → upgrade → balance verified |
+| F1 | Pending unbonding + redelegate across upgrade | **PASS** | 2026-03-30 | 4af80eb | P0 Reset GHA: unbonding_time=600s, stake+unstake → upgrade → balance verified |
 | F2 | In-flight tx at upgrade height | **PASS** | 2026-03-26 | 8307f9c | Regression GHA: 5 wallets concurrent (self-transfer only) |
 
 ### P1
@@ -44,7 +44,7 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | E2 | Crash during upgrade (cosmovisor recovery) | **PASS** | 2026-03-23 | 0382ec7 | Not re-tested on 8307f9c |
 | E3 | Rollback past upgrade height | **PARTIAL** | 2026-03-24 | 0382ec7 | Cross-boundary too slow (IAVL) |
 | E4d | cancelUpgrade leaves stale upgrade-info.json | **FINDING** | 2026-03-24 | 0382ec7 | Disk file not deleted on cancel |
-| E6 | UBI distribution (mock A+B) | **PASS** | 2026-03-24 | 0382ec7 | Not re-tested on 8307f9c |
+| E6 | UBI distribution (mock A+B) | **PASS** | 2026-03-26 | 8307f9c | Mock A: settlement 10000. Mock B: 3 members per_member=1942541/block |
 | F3 | Contract state survival (ERC20) | **PASS** | 2026-03-26 | 8307f9c | Manual GHA: forge deploy TestToken + verify name/supply/balance |
 | F4 | EL-CL consistency (deploy + complex calls) | **PASS** | 2026-03-26 | 8307f9c | Manual GHA: transfer + approve + verify balanceOf + allowance |
 | F5 | Block time regression | **PASS** | 2026-03-26 | 8307f9c | Regression GHA: 20s sample |
@@ -52,25 +52,30 @@ Devnet topology: 1 RPC, 1 bootnode, 4 genesis validators (equal voting power), 2
 | F7 | Historical RPC query (pre-upgrade block) | **PASS** | 2026-03-26 | 8307f9c | Regression GHA |
 | F8 | Unequal voting power upgrade | - | | | pending |
 | F11 | Hot-swap without planUpgrade | **FAIL** | 2026-03-26 | 8307f9c | Expected: version of store dkg mismatch, expected 210 got 0 |
+| F13 | cosmovisor add-upgrade without planUpgrade | **PASS** | 2026-03-27 | 8307f9c | 131 blocks/5min, cosmovisor stayed on genesis, smoke OK |
+| F14 | cosmovisor --upgrade-height crash + recovery | **PASS** | 2026-03-30 | v1.6.1 (4af80eb) | Crash at height 182: DKG store mismatch. Recovery: reset symlink + rm files → node resumed at 241 |
+| F15 | Partial validator upgrade (2/4 → halt → recovery) | **PASS** | 2026-04-01 | 4af80eb | 2/4 halt@241, val3 → 3/4 recovered@259, val4 → 4/4 full recovery |
 | F12 | Official binary on unknown chain ID | **CONFIRMED** | 2026-03-24 | 0382ec7 | panic: unknown chain ID |
 
 ### P2
 
 | ID | Scenario | Status | Date | Notes |
 |----|----------|--------|------|-------|
-| E4 | Double planUpgrade (same name, pending) | **PASS** | 2026-03-23 | Rejected: pending_upgrade_exists |
-| E4b | planUpgrade after cancel | **PASS** | 2026-03-23 | cancel → re-plan succeeds |
-| E4c | planUpgrade already completed name | **FINDING** | 2026-03-23 | evmengine allows, SDK blocks at execution |
-| E5 | planUpgrade at past height | **PASS** | 2026-03-23 | Rejected on-chain |
+| E4 | Double planUpgrade (same name, pending) | **PASS** | 2026-03-26 | Re-verified on 8307f9c: invalid_request |
+| E4b | planUpgrade after cancel | **PASS** | 2026-03-26 | Re-verified on 8307f9c: cancel → re-plan v1.6.0@77777 |
+| E4c | planUpgrade already completed name | **FINDING** | 2026-03-26 | Re-verified on 8307f9c: evmengine accepts v1.6.0@99999 |
+| E5 | planUpgrade at past height | **PASS** | 2026-03-26 | Re-verified on 8307f9c: silent reject |
 | E8 | Sequential upgrades (v1.6.0 → v2.0.0) | - | | pending |
-| E9 | cancelUpgrade before halt | - | | pending |
+| E9 | cancelUpgrade before halt | **FINDING** | 2026-03-30 | 4af80eb | cancelUpgrade clears on-chain state but cosmovisor still switches at planned height via stale upgrade-info.json (#757) |
 | F9 | Network partition during upgrade | - | | pending |
 | F10 | Downgrade v1.6.0 → v1.5.3 | - | | pending |
 
-## Score (on release/1.6 @ 8307f9c)
+## Score
 
-**Tested on 8307f9c**: 14 PASS / 1 SKIP
-**Carried from 0382ec7**: 11 PASS / 2 FAIL (expected) / 3 FINDING / 1 PARTIAL
+**Latest regression (v1.6.1 @ 4af80eb)**: ALL PASS (GHA #23725827965, 9 nodes incl val5&6)
+**Previous**: ff7d7d2 ALL PASS (#23635506361), b728ff2 ALL PASS (#23634152424)
+**Tested on 8307f9c**: 19 PASS / 1 SKIP / 2 FINDING + F13 PASS
+**Carried from 0382ec7**: 6 PASS / 2 FAIL (expected) / 1 FINDING / 1 PARTIAL
 **Pending**: 5
 
 ## Known Limitations
