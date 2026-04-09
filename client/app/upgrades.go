@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/piplabs/story/client/app/upgrades/horace"
+	"github.com/piplabs/story/client/app/upgrades/sip00010"
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -28,6 +29,7 @@ var (
 		polybius.Upgrade,
 		terence.Upgrade,
 		horace.Upgrade,
+		sip00010.Upgrade,
 	}
 	// Forks are for hard forks that breaks backward compatibility.
 	Forks = []upgrades.Fork{
@@ -36,6 +38,7 @@ var (
 		polybius.Fork,
 		terence.Fork,
 		horace.Fork,
+		sip00010.Fork,
 	}
 )
 
@@ -145,6 +148,9 @@ func GetUpgradeHeight(ctx sdk.Context, upgradeName string, fallbackHeight int64)
 
 	case netconf.Horace:
 		return horace.GetUpgradeHeight(ctx)
+
+	case netconf.SIP00010:
+		return sip00010.GetUpgradeHeight(ctx)
 
 	default:
 		// no dynamic resolver → use fallback (static height)

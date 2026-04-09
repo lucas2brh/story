@@ -14,7 +14,8 @@ const (
 	Terence = "terence"
 	V142    = "v1.4.2"
 
-	Horace = "horace"
+	Horace   = "horace"
+	SIP00010 = "sip00010"
 )
 
 var (
@@ -27,22 +28,25 @@ type UpgradeMap map[string]int64
 // UpgradeHistories are the map of histories for each network.
 var UpgradeHistories = map[string]UpgradeMap{
 	TestChainID: {
-		V121:    10,
-		Terence: 50,
-		V142:    50,
-		Horace:  100,
+		V121:     10,
+		Terence:  50,
+		V142:     50,
+		Horace:   100,
+		SIP00010: 200,
 	},
 	LocalChainID: {
-		V121:    0,
-		Terence: 50,
-		V142:    50,
-		Horace:  100,
+		V121:     0,
+		Terence:  50,
+		V142:     50,
+		Horace:   100,
+		SIP00010: 200,
 	},
 	StoryLocalnetID: {
-		V121:    0,
-		Terence: 0,
-		V142:    0,
-		Horace:  100,
+		V121:     0,
+		Terence:  0,
+		V142:     0,
+		Horace:   100,
+		SIP00010: 200,
 	},
 	AeneidChainID: {
 		Virgil:   345158,
