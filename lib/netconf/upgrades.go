@@ -49,10 +49,11 @@ var UpgradeHistories = map[string]UpgradeMap{
 		SIP00010: 200,
 	},
 	InternalDevnetID: {
-		V121:    0,
-		Terence: 0,
-		V142:    0,
-		Horace:  100,
+		V121:     0,
+		Terence:  0,
+		V142:     0,
+		Horace:   100,
+		SIP00010: 200,
 	},
 	AeneidChainID: {
 		Virgil:   345158,
