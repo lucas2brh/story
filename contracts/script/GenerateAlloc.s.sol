@@ -265,7 +265,7 @@ contract GenerateAlloc is Script {
 
         address tmp = address(
             new IPTokenStaking(
-                1 ether, // defaultMinFee, 1 IP
+                0.1 ether, // defaultMinFee, 0.1 IP (SIP-00010)
                 256 // maxDataLength
             )
         );
@@ -280,10 +280,10 @@ contract GenerateAlloc is Script {
         InitializableHelper.disableInitializers(impl);
         IIPTokenStaking.InitializerArgs memory args = IIPTokenStaking.InitializerArgs({
             owner: timelock,
-            minStakeAmount: 1024 ether,
-            minUnstakeAmount: 1024 ether,
+            minStakeAmount: 32 ether,
+            minUnstakeAmount: 32 ether,
             minCommissionRate: 5_00, // 5% in basis points
-            fee: 1 ether // 1 IP
+            fee: 0.1 ether // 0.1 IP (SIP-00010)
         });
 
         IPTokenStaking(Predeploys.Staking).initialize(args);
