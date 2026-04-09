@@ -2,7 +2,6 @@ package sip00010
 
 import (
 	"context"
-	"math/big"
 
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
@@ -61,27 +60,8 @@ func runSIP00010Upgrade(ctx context.Context, keepers *keepers.Keepers) error {
 
 	log.Info(ctx, "Updated minPartialWithdrawalAmount", "new_value", NewMinPartialWithdrawalAmount)
 
-	// --------------------------------
-	// Update EL staking contract params via IPTokenStaking
-	// These are called by the owner (governance) at the EL layer.
-	// The upgrade handler sets them via the staking keeper.
-	// --------------------------------
-
-	// NOTE: EL contract params (minStakeAmount, minUnstakeAmount, fee) must be
-	// updated via owner calls to the IPTokenStaking contract. This upgrade handler
-	// only modifies CL-layer params. EL params should be set separately via
-	// governance transaction or planUpgrade with contract calls.
-	//
-	// Target EL values for reference:
-	//   minStakeAmount:   32 IP  (32000000000000000000 wei)
-	//   minUnstakeAmount: 32 IP  (32000000000000000000 wei)
-	//   fee:              0.1 IP (100000000000000000 wei)
-
-	_ = new(big.Int) // suppress unused import if needed
-
 	log.Info(ctx, "SIP-00010 upgrade complete",
 		"minPartialWithdrawalAmount", NewMinPartialWithdrawalAmount,
-		"note", "EL params (minStakeAmount, minUnstakeAmount, fee) must be set via owner contract calls",
 	)
 
 	return nil

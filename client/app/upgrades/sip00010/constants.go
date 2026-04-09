@@ -12,12 +12,6 @@ import (
 )
 
 const (
-	// NewMinStakeAmount is 32 IP in wei (32 * 10^18).
-	NewMinStakeAmount = "32000000000000000000"
-	// NewMinUnstakeAmount is 32 IP in wei.
-	NewMinUnstakeAmount = "32000000000000000000"
-	// NewFee is 0.1 IP in wei (10^17).
-	NewFee = "100000000000000000"
 	// NewMinPartialWithdrawalAmount is 1 IP in gwei (10^9).
 	NewMinPartialWithdrawalAmount uint64 = 1_000_000_000
 )
