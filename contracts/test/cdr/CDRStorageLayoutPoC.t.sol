@@ -5,7 +5,9 @@ pragma solidity 0.8.23;
 
 import { Test } from "forge-std/Test.sol";
 import { console2 } from "forge-std/console2.sol";
-import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+// solhint-disable-next-line max-line-length
+import { TransparentUpgradeableProxy, ITransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 // CDRStorageLayoutPoC
@@ -20,10 +22,13 @@ import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils
 // Uses the real CDRStorageLocation constant from contracts/src/protocol/
 // CDR.sol so this PoC operates on the same storage region as production.
 //
-// This file is intentionally self-contained:
-//   - No Vault struct dependency (storage value simplified to bytes32)
-//   - No Predeploys / TimelockController / ProxyAdmin (uses ERC1967Proxy
-//     + vm.store on the EIP-1967 impl slot for the upgrade step)
+// Wraps the implementations in TransparentUpgradeableProxy + auto-created
+// ProxyAdmin to match how Story's predeploys (CDR / DKG / SGXValidationHook /
+// etc) are deployed by GenerateAlloc.s.sol. The upgrade step goes through
+// ProxyAdmin.upgradeAndCall, mirroring UpgradeCDR.s.sol's production path.
+//
+// Self-contained otherwise: no Vault struct dependency (storage value
+// simplified to bytes32), no Predeploys / TimelockController.
 //
 // Run: forge test --mc CDRStorageLayoutPoC -vv
 
@@ -145,10 +150,23 @@ contract CDRStorageLayoutPoC is Test {
         fixedImpl = new CDR_FixedAfter();
     }
 
-    /// @dev Overwrite the EIP-1967 implementation slot of an ERC1967Proxy. Skips ProxyAdmin
-    ///      governance to keep the PoC focused on the storage layout question.
+    /// @dev Deploy a TransparentUpgradeableProxy wrapping `impl`, with this contract as the
+    ///      owner of the auto-created ProxyAdmin. Mirrors GenerateAlloc.s.sol's predeploy setup.
+    function _deployProxy(address impl) internal returns (address) {
+        return address(new TransparentUpgradeableProxy(impl, address(this), ""));
+    }
+
+    /// @dev Read the auto-created ProxyAdmin out of the EIP-1967 admin slot.
+    function _getProxyAdmin(address proxy) internal view returns (ProxyAdmin) {
+        bytes32 raw = vm.load(proxy, ERC1967Utils.ADMIN_SLOT);
+        return ProxyAdmin(address(uint160(uint256(raw))));
+    }
+
+    /// @dev Upgrade through ProxyAdmin.upgradeAndCall — same path as UpgradeCDR.s.sol uses
+    ///      via the timelock in production. This contract owns the ProxyAdmin (set in
+    ///      _deployProxy), so onlyOwner gating is satisfied.
     function _upgradeImpl(address proxy, address newImpl) internal {
-        vm.store(proxy, ERC1967Utils.IMPLEMENTATION_SLOT, bytes32(uint256(uint160(newImpl))));
+        _getProxyAdmin(proxy).upgradeAndCall(ITransparentUpgradeableProxy(proxy), newImpl, "");
     }
 
     /// @dev Compute the absolute storage slot at which `vaults[uuid]` is stored, given the
@@ -160,8 +178,7 @@ contract CDRStorageLayoutPoC is Test {
 
     /// @notice Test 1 — buggy upgrade (#799 layout) orphans pre-existing vault data
     function test_BuggyUpgrade_OrphansVaultData() public {
-        ERC1967Proxy proxy = new ERC1967Proxy(address(beforeImpl), "");
-        address p = address(proxy);
+        address p = _deployProxy(address(beforeImpl));
 
         // 1. Under BEFORE layout, write a vault
         uint32 uuid = 42;
@@ -195,8 +212,7 @@ contract CDRStorageLayoutPoC is Test {
 
     /// @notice Test 2 — fixed upgrade (append-at-end) preserves vault data and lets the new field work
     function test_FixedUpgrade_PreservesVaultData() public {
-        ERC1967Proxy proxy = new ERC1967Proxy(address(beforeImpl), "");
-        address p = address(proxy);
+        address p = _deployProxy(address(beforeImpl));
 
         // 1. Under BEFORE layout, write a vault
         uint32 uuid = 99;
