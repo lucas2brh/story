@@ -20,7 +20,11 @@ const (
 	StoryUpgradeHeight = 4477880
 
 	// new max bytes for consensus params.
-	newMaxBytes = 20971520 // 20MB
+	newMaxBytes = 104857600 // 100MB (raised from 20MB for trace-bench-100mb test, 2026-05-22)
+
+	// LocalnetUpgradeHeight: low non-zero height so the v1.2.0 cap raise actually
+	// applies on story-localnet (default GetUpgradeHeight returns false for it).
+	LocalnetUpgradeHeight = 5
 )
 
 var Upgrade = upgrades.Upgrade{
@@ -42,6 +46,9 @@ func GetUpgradeHeight(chainID string) (int64, bool) {
 		return AeneidUpgradeHeight, true
 	case netconf.StoryChainID:
 		return StoryUpgradeHeight, true
+	case netconf.StoryLocalnetID:
+		// trace-bench-100mb test: apply the cap raise on story-localnet too.
+		return LocalnetUpgradeHeight, true
 	default:
 		return 0, false
 	}
